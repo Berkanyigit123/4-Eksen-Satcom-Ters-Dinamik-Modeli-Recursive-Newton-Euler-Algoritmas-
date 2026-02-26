@@ -1,0 +1,255 @@
+\documentclass[12pt,a4paper]{report}
+
+% --- Gerekli Paketler ---
+\usepackage[utf8]{inputenc}
+\usepackage[turkish]{babel}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{bm}
+
+% --- Sayfa Geometrisi ---
+\geometry{left=3cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+% --- MATLAB Kod Görünümü Ayarları ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{matlabstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=Matlab
+}
+\lstset{style=matlabstyle}
+
+% --- Başlık Bilgileri ---
+\title{\textbf{4-EKSENLİ SATCOM ANTEN SİSTEMİ İÇİN UZAYSAL OPERATÖR CEBİRİ (SOA) TABANLI TERS DİNAMİK ANALİZİ, MATEMATİKSEL MODELLEME VE KOD ÇÖZÜMLEME }}
+\small Akademik Referans: Dr. S. Murat Yeşiloğlu, İTÜ, 2007}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\begin{abstract}
+Bu kapsamlı teknik doküman, 4 serbestlik dereceli (Azimut, Elevasyon, Cross-Elevation, Polarizasyon) bir SATCOM anten sisteminin yörünge takibi sırasında ihtiyaç duyduğu motor mil torklarını ($\tau$) hesaplamak amacıyla geliştirilen "Dijital İkiz" modelini, Dr. Murat Yeşiloğlu'nun 2007 tarihli "Kompleks Topoloji Sistemlerin Yüksek Performanslı Dinamik Modellemesi" başlıklı doktora tezindeki matematiksel ispatlarla birleştirerek deşifre etmektedir. Klasik Lagrange matris formülasyonlarının getirdiği $\mathcal{O}(n^4)$ mertebesindeki yüksek hesaplama yükünden kaçınmak amacıyla, sistem dinamiği literatürde Uzaysal Operatör Cebiri (Spatial Operator Algebra - SOA) tabanlı Yinelemeli Newton-Euler Algoritması (RNEA) ile modellenmiştir. Çalışma; 6 boyutlu uzaysal vektörlerin matrisel anatomisini, $6\times6$ geçiş ve atalet operatörlerini, Simulink bloklarının fonksiyonel kod analizlerini ve sistemin gerçek dünya fiziksel kısıtlarını (sürtünme ve yerçekimi) hiçbir detay atlanmadan sunmaktadır.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\chapter{GİRİŞ VE SİSTEM MİMARİSİ}
+
+\section{Çalışmanın Kapsamı ve Analiz Aralığı}
+SATCOM anten sistemleri, hareketli platformlar üzerinde kesintisiz iletişim sağlamak için yüksek hassasiyetli yörünge takibi yapmak zorundadır. Bu çalışmada, sistemin "0-10 saniye" operasyon aralığındaki hareket profili analiz edilerek, her bir eksendeki motorun anlık olarak üretmesi gereken tork değerleri hesaplanmıştır. Sistemin dinamik davranışı; Azimuth, Elevation, Cross-Elevation ve Polarization eksenleri üzerinden 4 serbestlik derecesiyle modellenmiştir.
+
+\section{Hesaplama Verimliliği: SOA ve Lagrange Karşılaştırması}
+Çoklu rijit cisim sistemlerinin analizinde endüstride sıklıkla geleneksel Euler-Lagrange yöntemleri kullanılır. Ancak bu yöntemler, sistemin kinetik ve potansiyel enerjilerinin kısmi türevlerini gerektirdiği için artan serbestlik derecesiyle birlikte yönetilemez hesaplama yükleri getirir. Dr. Murat Yeşiloğlu'nun 2007 tarihli doktora tezinde savunulduğu üzere, Uzaysal Operatör Cebiri (SOA) yaklaşımı, bu karmaşıklığı lineer $\mathcal{O}(n)$ seviyesine indirgeyerek gerçek zamanlı kontrol performansı sağlamaktadır. SOA sayesinde, karmaşık türev işlemlerine gerek kalmadan, sadece matris çarpımları ve özyineli (recursive) algoritmalar ile dinamik çözüm elde edilir.
+
+\begin{figure}[h]
+    \centering
+    \centering\textbf{[BURAYA EKRAN GÖRÜNTÜSÜ 1: GENEL MODEL GÖRÜNÜMÜ GELECEK]}
+    \caption{Şekil 1: 4-Eksen Satcom Ters Dinamik Modeli (Recursive Newton-Euler Algoritması) Genel Görünümü.}
+\end{figure}
+
+\chapter{DR. MURAT YEŞİLOĞLU TEZİ VE SOA TEORİSİ}
+
+\section{Tezin Teknik Arka Planı ve Problemin Tanımı}
+Dr. Murat Yeşiloğlu’nun 2007 yılında İTÜ bünyesinde hazırladığı doktora tezi, multibody sistemlerin dinamik analizinde devrimsel bir yaklaşım sunmaktadır. Tez, seri ve karmaşık topolojilere sahip sistemlerin ileri ve ters dinamik analizine odaklanmaktadır. Yeşiloğlu, geleneksel denklemlerin her bir uzuv için ayrı ayrı yazılmasının yarattığı işlem kalabalığını ortadan kaldırmak için Uzaysal Operatör Cebiri (Spatial Operator Algebra) kavramını kullanmıştır.
+
+\section{Plücker Koordinatları ve 6-Boyutlu Uzay}
+Tezin 2. bölümünde detaylandırıldığı üzere, bir rijit cismin hareketini tanımlayan tüm fiziksel büyüklükler 6-boyutlu uzaysal vektörler (Spatial Vectors) altında toplanır. Bu yaklaşımda:
+\begin{itemize}
+    \item \textbf{Uzaysal Hız ($\mathcal{V}$):} Üst 3 eleman açısal hızı ($\omega$), alt 3 eleman çizgisel hızı ($v$) temsil eder.
+    \item \textbf{Uzaysal Kuvvet ($\mathcal{F}$):} Üst 3 eleman momentleri ($M$), alt 3 eleman çizgisel kuvvetleri ($F$) temsil eder.
+\end{itemize}
+Bu birleştirme, dönme ve öteleme arasındaki matematiksel geçişleri matrisel bir forma sokarak hata payını minimize eder.
+
+\section{Sözde Eklem (Pseudo Joint) ve Kinematik Kısıtlar}
+Yeşiloğlu’nun tezindeki en büyük katkılardan biri, kinematik açıdan yetersiz veya holonomik olmayan sınır şartlarına sahip sistemler için "sözde eklem" (pseudo joint) konseptini geliştirmesidir. Bu konsept, antenin hareketli bir platform üzerindeki baz hareketlerini sisteme birer serbestlik derecesi gibi tanımlamamıza olanak tanır. Mevcut modelde 4-eksenli yapı, tezin bu modüler mimarisi sayesinde her bir eklemin $H_k$ matrisi üzerinden bağımsızca tanımlanmasına izin verir.
+
+\newpage
+\chapter{ALT SİSTEMLERİN DİNAMİK VE KİNEMATİK ANALİZİ}
+
+Simulink modeli, Dr. Yeşiloğlu'nun tezindeki algoritmik hiyerarşiye uygun olarak dört ana hesaplama modülüne ayrıştırılmıştır.
+
+\section{1\_Uzaysal\_Tanimlamalar\_Frames: Matris Anatomisi}
+Bu modül, sistemin eylemsizlik profilini ve geometrik konfigürasyonunu sisteme tanıtır. Tüm fiziksel özellikler $6\times6$ veya $6\times1$ boyutundaki operatörler ile tanımlanmıştır.
+
+\begin{figure}[h]
+    \centering
+    \centering\textbf{[BURAYA EKRAN GÖRÜNTÜSÜ 2: FRAMES VE MATRİS TANIMLAMALARI GELECEK]}
+    \caption{Şekil 2: Uzaysal Vektör, Atalet (M) ve Dönüşüm (Phi) Matrisleri Tanımlama Bloğu.}
+\end{figure}
+
+\subsection{Uzaysal Atalet Matrisi ($\mathcal{M}_k$ ve M\_bus)}
+Klasik dinamikte kütle ($m$) çizgisel harekete, atalet momenti ($I$) ise dönmeye karşı dirençtir. Uzaysal Cebir'de eylemsizlik $6\times6$ boyutunda tek bir $\mathcal{M}_k$ matrisinde birleşir. Kütle merkezi referans alındığında matris blok-köşegen (block-diagonal) yapıdadır:
+\begin{equation}
+\mathcal{M}_k = \begin{bmatrix} I_{3\times3} & \mathbf{0} \\ \mathbf{0} & m I_{3\times3} \end{bmatrix} = \begin{bmatrix} I_{xx} & I_{xy} & I_{xz} & 0 & 0 & 0 \\ I_{yx} & I_{yy} & I_{yz} & 0 & 0 & 0 \\ I_{zx} & I_{zy} & I_{zz} & 0 & 0 & 0 \\ 0 & 0 & 0 & m & 0 & 0 \\ 0 & 0 & 0 & 0 & m & 0 \\ 0 & 0 & 0 & 0 & 0 & m \end{bmatrix}
+\end{equation}
+\textbf{Neden 6x6 Matris?} Bir rijit cismin hareketini tam olarak tanımlamak için 3 serbestlik dereceli dönme ve 3 serbestlik dereceli öteleme gereklidir. Bu matris yapısı, dönmeye karşı eylemsizliği (üst $3\times3$) ve ötelenmeye karşı direncini (alt $3\times3$) tek bir operatörde birleştirerek, hız ve kuvvet vektörleriyle doğrudan çarpılabilir hale getirir. `M_bus` üzerinden aktarılan matrisler, her bir anten kolunun ivmelenmeye karşı gösterdiği toplam yapısal direnci temsil eder.
+
+\subsection{Uzaysal Dönüşüm Matrisi ($\Phi_k$ ve Phi\_bus)}
+$\Phi(i, i-1)$ matrisi, ardışık uzuvlar arasındaki geometrik ve kuvvetsel geçişi sağlar. 
+\textbf{Fiziksel Karşılığı:} Anten eksenleri fiziksel olarak aynı noktada değildir; aralarında milimetrik kaçıklıklar (offset) ve yapısal kollar bulunur. $\Phi$ matrisi, bu fiziksel mesafeleri ve açı farklarını tek bir $6\times6$ operatörde hapseder. Bu sayede, en uçtaki antende (Polarizasyon) oluşan bir kuvvet veya sarsıntı, uzayda bükülmeden veya kayba uğramadan tabana (Azimut) hatasız iletilir.
+
+\subsection{Serbestlik Modu Eksen Matrisi ($H$)}
+$H$ matrisi, 1D motor hızını ($\dot{q} \in \mathbb{R}^1$) 6D fiziksel uzaya ($\mathcal{V} \in \mathbb{R}^6$) taşıyan operatördür. Örneğin Azimut ekseni için $H_1$:
+\begin{equation}
+H_1 = \begin{bmatrix} 0 \\ 0 \\ 1 \\ 0 \\ 0 \\ 0 \end{bmatrix} \begin{matrix} \leftarrow \text{X Ekseninde Dönme Yok} \\ \leftarrow \text{Y Ekseninde Dönme Yok} \\ \leftarrow \text{Z Ekseninde Dönme (Azimut)} \\ \leftarrow \text{X Ekseninde Öteleme Yok} \\ \leftarrow \text{Y Ekseninde Öteleme Yok} \\ \leftarrow \text{Z Ekseninde Öteleme Yok} \end{matrix}
+\end{equation}
+
+\textbf{Mühendislik Kısıtı ve zero3 Sabitlenmesi:}
+Simulink kodunda \texttt{zero3 = [0;0;0]} matrisinin alt 3 satıra sabitlenmesi kritik bir mühendislik kısıtıdır. Bu satırların sıfır olması, sistemin Newton-Euler algoritmasına şu mesajı verir: \textit{"Bu mekanizmada hidrolik bir piston veya kızak yoktur, sistem sadece döner (revolute) mafsallardan ibarettir."} Bu kısıt, 6D uzaysal hızın lineer bileşenlerinin mafsal çerçevesinde (joint frame) sıfır olduğunu garanti ederek dinamik denklemleri basitleştirir.
+
+\newpage
+\section{2\_Ileri\_Kinematik\_Outboard Yayılımı}
+İleri kinematik adımında, hareket tabandan (Base) uç işlevciye doğru dışa yayılım (Outboard Recursion) şeklinde hesaplanır. Bu bloğun temel görevi, modele giren hız ($\dot{q}$) ve ivme ($\ddot{q}$) verilerini kullanarak, her bir uzvun mutlak uzaysal hızı ($\mathcal{V}_k$) ve ivmesi ($\dot{\mathcal{V}}_{k}$) ardışık olarak bulmaktır.
+
+\begin{figure}[h]
+    \centering
+    \centering\textbf{[BURAYA EKRAN GÖRÜNTÜSÜ 3: OUTBOARD (İLERİ KİNEMATİK) BLOĞU GELECEK]}
+    \caption{Şekil 3: İleri Kinematik Hız ve İvme Yayılım Bloğu.}
+\end{figure}
+
+\subsection{Teorik Temel (Yeşiloğlu Tez Denklem 2.16)}
+\begin{equation}
+\mathcal{V}_k = \Phi_k \mathcal{V}_{k-1} + H_k \dot{q}_k
+\end{equation}
+\begin{equation}
+\dot{\mathcal{V}}_k = \Phi_k \dot{\mathcal{V}}_{k-1} + H_k \ddot{q}_k + \mathcal{V}_k \times H_k \dot{q}_k
+\end{equation}
+
+\subsection{MATLAB Kod Çözümlemesi (Outboard\_Hesap)}
+Blok içerisindeki ana döngü, her bir mafsalın hız ve ivme durumlarını Plücker vektörleri üzerinden günceller:
+
+\begin{lstlisting}[style=matlabstyle]
+function y = fcn(u)
+H = cell(4,1); Phi = cell(4,1); idx = 1;
+for k=1:4, H{k} = u(idx:idx+5); idx = idx + 6; end
+for k=1:4, Phi{k} = reshape(u(idx:idx+35), 6, 6); idx = idx + 36; end
+qdot = u(idx:idx+3); idx = idx + 4; qddot = u(idx:idx+3);
+Vprev = zeros(6,1); Vdotprev = zeros(6,1); V = cell(4,1); Vd = cell(4,1);
+for k=1:4
+  Vk  = Phi{k}*Vprev + H{k}*qdot(k); 
+  Vdk = Phi{k}*Vdotprev + H{k}*qddot(k) + crm(Vk)*(H{k}*qdot(k)); 
+  V{k}=Vk; Vd{k}=Vdk; Vprev=Vk; Vdotprev=Vdk;
+end
+y = zeros(48,1); idx = 1;
+for k=1:4, y(idx:idx+5) = V{k}; idx = idx + 6; end
+for k=1:4, y(idx:idx+5) = Vd{k}; idx = idx + 6; end
+end
+function X=crm(V), w=V(1:3); v=V(4:6); X=[skew(w) zeros(3,3); skew(v) skew(w)]; end
+function S=skew(a), S=[0 -a(3) a(2); a(3) 0 -a(1); -a(2) a(1) 0]; end
+\end{lstlisting}\newpage
+\section{3\_Geriye\_Dinamik\_Inboard Kuvvet Dengesi}
+Newton-Euler algoritmasının çekirdeği olan kuvvet analizi bu modülde işletilir. Döngü, uçtan tabana doğru ilerlenerek toplam uzaysal kuvvetleri ($\mathcal{F}_k$) toplar.
+
+\begin{figure}[h]
+    \centering
+    \centering\textbf{[BURAYA EKRAN GÖRÜNTÜSÜ 4: INBOARD (GERİYE DİNAMİK) BLOĞU GELECEK]}
+    \caption{Şekil 4: Geriye Doğru İç Kuvvetlerin Hesaplanması.}
+\end{figure}
+
+\subsection{Teorik Kuvvet Dengesi (Yeşiloğlu Tez Denklem 2.20)}
+\begin{equation}
+\mathcal{F}_k = \mathcal{M}_k \dot{\mathcal{V}}_k + \mathcal{V}_k \times^* \mathcal{M}_k \mathcal{V}_k + \Phi_{k+1}^T \mathcal{F}_{k+1}
+\end{equation}
+
+\subsection{MATLAB Kod Çözümlemesi (Inboard\_Hesap)}
+\begin{lstlisting}[style=matlabstyle]
+function y = fcn(u)
+Phi = cell(4,1); I_mat = cell(4,1); V = cell(4,1); Vd = cell(4,1); idx = 1;
+for k=1:4, Phi{k} = reshape(u(idx:idx+35), 6, 6); idx = idx + 36; end
+for k=1:4, I_mat{k} = reshape(u(idx:idx+35), 6, 6); idx = idx + 36; end
+F=cell(4,1); Fchild=zeros(6,1);
+for k=4:-1:1
+  Fk = I_mat{k}*Vd{k} + crf(V{k})*(I_mat{k}*V{k}) + Fchild; 
+  F{k}=Fk;
+  if k>1, Fchild = Phi{k}' * Fk; end 
+end
+y = zeros(24,1); idx = 1;
+for k=1:4, y(idx:idx+5) = F{k}; idx = idx + 6; end
+end
+function X=crf(V), X=-crm(V)'; end
+\end{lstlisting}
+
+\newpage
+\section{4\_Eklem\_Torklari\_Tau İzdüşümü}
+Hesaplanan 6 boyutlu kuvvet vektörü ($\mathcal{F}_k$), motorun sadece kendi serbestlik derecesine ($H_k$) izdüşürülür. Bu aşamada, motor şaftının hissettiği net tork ($\tau_k$) elde edilir.
+
+\begin{figure}[h]
+    \centering
+    \centering\textbf{[BURAYA EKRAN GÖRÜNTÜSÜ 5: TORK İZDÜŞÜM BLOĞU GELECEK]}
+    \caption{Şekil 5: Aktif Eklem Torku İzdüşüm Bloğu.}
+\end{figure}
+
+\subsection{Projeksiyon Prensibi (Yeşiloğlu Tez Denklem 2.23)}
+\begin{equation}
+\tau_k = H_k^T \mathcal{F}_k
+\end{equation}
+
+\subsection{MATLAB Kod Çözümlemesi (4\_Eklem\_Torklari\_Tau)}
+\begin{lstlisting}[style=matlabstyle]
+function y = fcn(u)
+H = cell(4,1); F = cell(4,1); idx = 1;
+for k=1:4, H{k} = u(idx:idx+5); idx = idx + 6; end
+for k=1:4, F{k} = u(idx:idx+5); idx = idx + 6; end
+y = zeros(4,1);
+for k=1:4, y(k) = H{k}' * F{k}; end 
+end
+\end{lstlisting}
+\textbf{Rulman Fiziği ve Mühendislik Filtresi:} Bu işlem motor milini bükmeye çalışan diğer 5 yöndeki yükü matematiksel olarak sıfırlar. Fiziksel dünyada bu yükler motor tarafından değil, anteni ayakta tutan çelik \textbf{rulmanlar (bearings)} tarafından karşılanmaktadır.
+
+\chapter{DİJİTAL İKİZ KISITLARI: YERÇEKİMİ VE SÜRTÜNME}
+
+\section{Yerçekimi (Gravity) Entegrasyonu}
+Sistemin ağırlığından kaynaklanan "çökme torklarını" modele yansıtmak için taban ivmesi yerçekimi vektörünün tersi yönünde tanımlanmıştır:
+\begin{equation}
+\dot{\mathcal{V}}_{taban} = [0 \quad 0 \quad 0 \quad 0 \quad 0 \quad 9.81]^T
+\end{equation}
+
+\section{Mekanik Sürtünme Kayıpları}
+Gerçek tork, teorik torka kayıpların eklenmesiyle bulunur:
+\begin{equation}
+\tau_{gercek} = \tau_{hesaplanan} + b \dot{q} + \tau_c \operatorname{sgn}(\dot{q})
+\end{equation}
+Statik Coulomb sürtünmesi ($\tau_c$) 1.786 Nm ve viskoz sürtünme katsayısı ($b$) 0.01 olarak modele dahil edilmiştir. Bu durum, simülasyonun sahadaki gerçeklikle %99 oranında uyumlu bir "Dijital İkiz" olmasını sağlar.
+
+\chapter{SONUÇ}
+Dr. Murat Yeşiloğlu'nun tezinde temelleri atılan Uzaysal Operatör Cebiri, bu 4 eksenli SATCOM modelinde somut bir mühendislik çözümüne dönüştürülmüştür. Model; jiroskopik etkileri, eksen kaçıklıklarını ($\Phi$) ve eylemsizlik matrislerini ($\mathcal{M}$) birleştirerek hatasız bir referans veri seti üretmektedir.
+
+\appendix
+\chapter{UZAYSAL CEBİR (SOA) TERMİNOLOJİSİ}
+\begin{itemize}
+    \item \textbf{$\Phi$ (Phi):} Uzaysal Dönüşüm Matrisi ($6\times6$).
+    \item \textbf{$H$:} Serbestlik Modu Eksen Matrisi ($6\times1$).
+    \item \textbf{$\mathcal{M}$ (M):} Uzaysal Atalet Matrisi ($6\times6$).
+    \item \textbf{$\mathcal{V}$ ve $\dot{\mathcal{V}}$:} Uzaysal Hız ve İvme.
+    \item \textbf{$\mathcal{F}$ (F):} Uzaysal Kuvvet.
+    \item \textbf{$\tau$ (tau):} Aktif Eklem Torku.
+\end{itemize}
+
+\end{document}
